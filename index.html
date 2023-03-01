@@ -1,0 +1,208 @@
+        <!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width initial-scale=1">
+            <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+            <script src="scripts/jquery-2.x-git.min.js"></script>
+
+            <!-- Include all compiled plugins (below), or include individual files as needed -->
+            <script src="bootstrap/js/bootstrap.min.js"></script>
+
+            <!-- Bootstrap -->
+            <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+            <link href="css/styles.css" rel="stylesheet">
+            <link href="./icons/AdroitLogo-1.ico" rel="icon" type="image/ico" />
+            <title>Order Upload</title>
+        </head>
+
+        <body>
+           
+            <div class="container">                
+                <div class="row">
+                    <form action="./php/imgUpload.php" method="post">
+                        <div class="row form-inline">
+                            <label class="col-sm-3 control-label" for="Name">Order ID:</label>
+                            <input class="col-sm-4 form-control" title="orderId" id="orderId" type="text" name="name" value=""/>
+                            
+                            <input type="hidden" name="imageData" id="imageData" />
+                            <input class="col-sm-3 form-control" type="submit" value="Submit" class='btn btn-block btn-success'/>
+                            <a id="fetch" class='col-sm-2 form-control btn btn-block btn-primary'>Fetch</a>
+                        </div>
+                        </form>                        
+                        
+                        <div class="row">                        
+                            <div>
+                                <a class='col-sm-4 btn btn-block btn-info text-white' id='open'> Open camera</a>
+                                <a class='col-sm-4 btn btn-block btn-danger text-white' id='close'> Close camera</a>
+                                <a class='col-sm-4 btn btn-block btn-success text-white' id='capture'>Capture Image</a>
+                            </div>
+                        </div>
+                </div>
+            </div>
+            
+            <div class="container" id='camcam'>                
+                <div class="row">
+                    <div class="col-md-offset-1">
+                        <div id="wrap">
+                            <div id='cont'>
+                                <div id="vid" class="son">
+                                    <video id='video'></video>
+                                </div>
+                                <div id="capture" class="son">
+                                    <canvas id='canvas'></canvas>                                 
+                                </div>                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        <footer>
+            <script>
+                $(document).ready(function() { 
+
+                    var video = document.getElementById('video');
+                    var canvas = document.getElementById('canvas');
+                    var context = canvas.getContext('2d');                    
+                    var strr;
+                    var wCanvas;
+                    var hCanvas;
+                    //resetControls();                        
+                    function opencam() {    
+                        resetControls();
+                        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.oGetUserMedia || navigator.msGetUserMedia;
+                        const constraints = {
+                            advanced: [{
+                                facingMode: "environment",
+                                autofocus: true
+                            }]
+                        };
+                        if (navigator.getUserMedia) {
+                            navigator.getUserMedia({
+                                video: constraints
+                            }, streamWebCam, throwError);
+                        }                        
+                    }
+
+                    function closecam() {
+                        video.pause();
+                        try {
+                            video.srcObject = null;
+                        } catch (error) {
+                            video.src = null;
+                        }
+                        var track = strr.getTracks()[0]; // if only one media track
+                        // ...
+                        track.stop();
+                    }
+                    
+
+                    function streamWebCam(stream) {
+                        const mediaSource = new MediaSource(stream);
+                        try {
+                            video.srcObject = stream;
+                        } catch (error) {
+                            video.src = URL.createObjectURL(mediaSource);
+                        }
+                        video.play();
+                        strr = stream;                        
+                    }
+
+                    function throwError(e) {
+                        alert(e.name);
+                    }
+                    $('#open').click(function(event) {                                         
+                       
+                        opencam();        
+                    });
+                    $('#close').click(function(event) {                        
+                        closecam();                                                
+                    });
+                    
+                    $('#capture').click(function(event) {    
+                        $('#canvas').show();                        
+                        canvas.width = video.clientWidth;
+                        canvas.height = video.clientHeight;                                                
+                        context.drawImage(video, 0, 0);
+                        closecam();
+                    });  
+                    $('#fetch').click(function(event) {                        
+                        var strOrderId = $('#orderId').val();
+                        console.log('value of strOrderid - ' + strOrderId)+' - '; 
+                        $('#canvas').show();
+                        $.ajax({
+                            url: './php/getOrderImage.php',
+                            type: 'POST',
+                            data: { orderId: strOrderId },
+                            success: function(data) {
+                                var image = new Image();
+                                image.onload = () => {      
+                                    console.log('image width -- '+image.width);
+                                    console.log('image height -- '+image.height);                               
+                                    canvas.width = image.width;
+                                    canvas.height = image.height;
+                                    context.drawImage(image, 0, 0);                                    
+                                }
+                                image.src = data;
+                                                              
+                                console.log('fetch Image Successful...');
+                            },
+                            error: function() {
+                             alert('failure');
+                            }
+                         });                                              
+                    }); 
+                    $("form").submit(function(e) {
+                        // let's prevent the default behavior for now,
+                        // so that we'll have time to include the image data
+                        e.preventDefault();
+  
+                      var str = document.getElementById("orderId").value;
+                      
+                      if (str == null)
+                      {
+                          str = prompt("Order Id is Mandatory...!!!","ord123");
+                          if((str != null)|| (str != "")){
+                          document.getElementById("orderId").value = str;
+                          }
+                          else
+                          {return false;}
+                      }
+                      console.log("from --  submit - Order Number - "+str);
+                      
+                      var dataURL=document.getElementById('canvas').toDataURL('image/jpeg', 1.0);  
+                      console.log("canvas width - "+canvas.width);
+                      if (canvas.width == 0)
+                      {
+                          alert("capturing a image is Mandatory...!!!");
+                          return false;
+                      }
+                      // serialize your form                      
+                      // wrap both in an object
+                      var package={ orderId: str, imageData: dataURL };                   
+  
+                      $.ajax({  
+                          type: "POST",  
+                          url: "./php/imgUpload.php",  
+                          data: package,  
+                          success: function(value) {  
+                              // ...we have success!
+                              console.log("success from --  SubmitForm"+value);
+                          }
+                      });
+                      resetControls();
+                        console.log("Exit -- Submit()");
+                      });                           
+                    
+                });     
+                function resetControls()
+                    {        
+                        $("#canvas").hide();                                                 
+                        $('#orderId').val('');                                               
+                    }  
+            </script>
+        </footer>
+
+    </html>

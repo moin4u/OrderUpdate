@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">  
+        
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->    
+        <script src="scripts/jquery-2.x-git.min.js"></script>
+       
+        <!-- Include all compiled plugins (below), or include individual files as needed -->
+        <script src="bootstrap/js/bootstrap.min.js"></script>
+
+        <!-- Bootstrap -->
+        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/styles.css" rel="stylesheet">      
+        <link href="./icons/AdroitLogo-1.ico" rel="icon" type="image/ico" /> 
+        <title>Display</title>
+    </head>
+    <body>
+        <header>             
+            <nav class="navbar navbar-default navbar-fixed-top" id="nav">
+                <div class="container">
+                <div class="navbar-header">
+                    <button type="button" title="NavToggle" class="navbar-toggle" data-target="#navbarCollapse" data-toggle="collapse">
+                        <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+                    </button>                
+                </div>
+                <div class="navbar-collapse collapse" id="navbarCollapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="./index.html"><span class="glyphicon glyphicon-home"></span> Home</a></li>
+                        <li><a href="./gallery.html"><span class="glyphicon glyphicon-picture"></span> Gallery</a></li>
+                        <li class="active"><a href="./displayImg.html"><span class="glyphicon glyphicon-picture"></span> Photos</a></li>
+                        <li><a href="./imgUpload.html">Upload Image</a></li>
+                        <li><a href="./test_jq.html">Test jQuery</a></li>
+                        <li><a href="./feedback.html"><span class="glyphicon glyphicon-pencil"></span> Feedback</a></li>
+                    </ul>
+                   
+                    <form class="navbar-form navbar-left" role="search">
+                        <div class="form-group">
+                            <input class="form-control" type="text" placeholder="Search"/>
+                        </div>
+                        <button type="submit" class="btn btn-default">Submit</button>
+                    </form>  
+                    <ul class="nav nav-bar navbar-right">
+                        <li><a href="./about.html"><span class="glyphicon glyphicon-transfer"></span> About</a></li>
+                    </ul> 
+                </div>
+                </div>
+            </nav> 
+        </header>
+        <div class="container">            
+            <div class="row">                
+                <div class="col-xs-1 center-block" id="divLBtn">                       
+                    <button type="button" id="bLeft" title="Previous Image" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-arrow-left"></span></button>                    
+                </div>
+                <div class="col-xs-10"> 
+                    <div id="img"></div> 
+                    <div id="imgID"></div>                                   
+                </div>
+                <div class="col-xs-1 center-block" id="divRBtn">                       
+                    <button type="button" id="bRight" title="Next Image" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-arrow-right"></span></button>                    
+                </div>
+            </div>
+            <div class="row">
+                <hr>
+                <div class="col-xs-12 text-justify">
+                    <div>
+                        <p id="dispDetails"></p>                       
+                    </div>                    
+                </div>
+            </div>
+        </div>
+        
+    </body>
+    <footer>
+        <script>
+            var pageDataObj = null;
+            var arrItems = [];
+            var nameVal = "apple.jpg";
+            var docHt = 0;
+            $(document).ready(function()
+            {   
+                var navHt = $('#nav').height();
+                $("body").css("padding-top",navHt);
+                const urlParams = new URLSearchParams(window.location.search);                
+                if(urlParams.has('name'))
+                   {
+                     nameVal = urlParams.get('name');                
+                    }                    
+                console.log(nameVal); 
+                docHt = ($(window).height()-$('#nav').outerHeight());
+                $('#img').css("max-height",docHt+"px");                
+                fetchItems();               
+               
+            }); 
+            function fetchItems()
+            {   
+                $.get('./php/getItems.php',
+                    function(result,status,xhr)
+                    { 
+                        if(status == "success")     
+                        {
+                           console.log("success");                            
+                            pageDataObj = result;
+                            buildProductPage();      
+                            SetImgDetails();                      
+                        }  
+                        else
+                        {
+                            strCat = status; 
+                            console.log(status);
+                        }                
+                    }
+                );
+            } 
+            function buildProductPage()
+            {                
+                $.each(pageDataObj,(index,obj)=>{                    
+                    arrItems[index] = obj.name;
+                });             
+            }         
+
+            function SetImgDetails()
+            {
+                var i = pageDataObj.findIndex((ob)=>{
+                    return ob.name == nameVal;
+                });
+                //console.log("index -- "+i);
+                $('#dispDetails').html(pageDataObj[i].desc);
+                SetImage(nameVal);
+                
+            }
+            function SetImage()
+            {
+                var dispName = '';                
+                dispName = strSub(nameVal);
+                $('#imgID').html("<div class=\"text-capitalize h2 text-center\">"+ dispName[0] +"</div>");
+                //console.log(dispName[0]);                
+                var htmlString = "<img id='iID' src=\"./images/"+ nameVal+ "\" class=\"img-responsive center-block\">";                                
+                $('#img').html(htmlString); 
+                $('#img img').css("max-height",docHt+"px");               
+            }
+            function strSub(strObj)
+            {
+                var strReturn = strObj.split('.',1);;
+                return strReturn;
+            }
+          
+            
+            $(document).ready(function()
+                {                                   
+                    $('#bRight').click(function(){
+                        
+                        var nIndex = arrItems.indexOf(nameVal);
+                        if(arrItems[(nIndex+1)] != undefined)
+                        {
+                            $('#bLeft').removeAttr("disabled","desiabled");                            
+                            nameVal = arrItems[(nIndex+1)];
+                            SetImgDetails();                            
+                            //console.log("Index: " + (nIndex+1) +" value: "+arrItems[(nIndex+1)]);            
+                        }
+                        else
+                        {
+                            $('#bRight').attr("disabled","disabled");                            
+                        }
+                    });
+
+                    $('#bLeft').click(function(){                        
+                        var nIndex = arrItems.indexOf(nameVal);                                                  
+                        if(arrItems[(nIndex-1)] != undefined)
+                        {
+                            $('#bRight').removeAttr("disabled","disabled");
+                            nameVal = arrItems[(nIndex-1)];
+                            SetImgDetails();                            
+                            //console.log("Index: " + (nIndex-1) +" value: "+arrItems[(nIndex-1)]);                                          
+                        }    
+                        else
+                        {
+                            $('#bLeft').attr("disabled","disabled");
+                        }
+                    });
+                });
+        </script>
+    </footer>
+</html>
